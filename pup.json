@@ -1,0 +1,10 @@
+{
+  "processes": [
+    {
+      "id": "56k-main",
+      "cmd": "deno run -A --unstable main.ts",
+      "terminate": "0 50 0 * * *",
+      "autostart": true
+    }
+  ]
+}
