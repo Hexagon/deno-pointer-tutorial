@@ -122,4 +122,4 @@ Deno.unrefTimer(broadcastInterval);
 
 app.listen({ port: LISTEN_PORT });
 
-console.log("Started")
+console.log("Started");
