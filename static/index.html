@@ -1,83 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>56k</title>
-    <meta charset="utf8">
-    <script>
-          function wsUrl(s) {
-                const l = window.location;
-                const dir = l.pathname.substring(0, l.pathname.lastIndexOf("/"));
+  <title>56k</title>
+  <meta charset="utf8">
+  <script>
+    function wsUrl(s) {
+      const l = window.location;
+      const dir = l.pathname.substring(0, l.pathname.lastIndexOf("/"));
 
-                return ((l.protocol === "https:") ? "wss://" : "ws://") + l.host + dir + s;
-            }
-    </script>
-<script>
+      return ((l.protocol === "https:") ? "wss://" : "ws://") + l.host + dir + s;
+    }
+  </script>
+  <script>
     document.addEventListener("DOMContentLoaded", function(event) {
-        const ws = new WebSocket(wsUrl("/ws"));
+      const ws = new WebSocket(wsUrl("/ws"));
 
-        const pointerId = Math.random().toString(36).substr(2, 9);  // unique identifier for this pointer
+      const pointerId = Math.random().toString(36).substr(2, 9);  // unique identifier for this pointer
 
-        ws.onopen = function(event) {
-            console.log("Connection established");
-        };
+      ws.onopen = function(event) {
+        console.log("Connection established");
+      };
 
-        ws.onclose = function(event) {
-            console.log("Connection closed");
-        };
+      ws.onclose = function(event) {
+        console.log("Connection closed");
+      };
 
-        ws.onerror = function(event) {
-            console.error("WebSocket error observed:", event);
-        };
+      ws.onerror = function(event) {
+        console.error("WebSocket error observed:", event);
+      };
 
-        let mousePos = { x: 0, y: 0, id: pointerId };
-        let lastPos = { x: 0, y: 0, id: pointerId };
+      let mousePos = { x: 0, y: 0, id: pointerId };
+      let lastPos = { x: 0, y: 0, id: pointerId };
 
-        document.onmousemove = function(e) {
-            mousePos.x = (e.clientX / window.innerWidth) * 100;
-            mousePos.y = (e.clientY / window.innerHeight) * 100;
+      document.onmousemove = function(e) {
+        mousePos.x = (e.clientX / window.innerWidth) * 100;
+        mousePos.y = (e.clientY / window.innerHeight) * 100;
+      }
+
+      setInterval(function() {
+        if(ws.readyState === ws.OPEN) {
+          if (!lastPos || lastPos.x !== mousePos.x || lastPos.y !== mousePos.y) {
+            lastPos.x = mousePos.x
+            lastPos.y = mousePos.y
+            ws.send(JSON.stringify(mousePos));
+          }
         }
+      }, 150); // Send mouse position every second
 
-        setInterval(function() {
-            if(ws.readyState === ws.OPEN) {
-                if (!lastPos || lastPos.x !== mousePos.x || lastPos.y !== mousePos.y) {
-                    lastPos.x = mousePos.x
-                    lastPos.y = mousePos.y
-                    ws.send(JSON.stringify(mousePos));
-                }
-            }
-        }, 150); // Send mouse position every second
+      const cursors = {};
 
-        const cursors = {};
+      ws.onmessage = function(event) {
+        const positions = JSON.parse(event.data);
+        positions.forEach((pos) => {
+          if (pos.id === pointerId) return;  // skip own pointer
 
-        ws.onmessage = function(event) {
-            const positions = JSON.parse(event.data);
-            positions.forEach((pos) => {
-                if (pos.id === pointerId) return;  // skip own pointer
+          let cursor = cursors[pos.id];
+          if (!cursor) {
+            cursor = document.createElement('img');
+            cursor.src = 'cur/arrow.cur';
+            cursor.style.position = 'absolute';
+            document.body.appendChild(cursor);
+            cursors[pos.id] = cursor;
+          }
+          cursor.style.left = pos.x + '%';
+          cursor.style.top = pos.y + '%';
+        });
 
-                let cursor = cursors[pos.id];
-                if (!cursor) {
-                    cursor = document.createElement('img');
-                    cursor.src = 'cur/arrow.cur';
-                    cursor.style.position = 'absolute';
-                    document.body.appendChild(cursor);
-                    cursors[pos.id] = cursor;
-                }
-                cursor.style.left = pos.x + '%';
-                cursor.style.top = pos.y + '%';
-            });
-
-            // remove any extra cursors
-            Object.keys(cursors).forEach((id) => {
-                if (!positions.find((pos) => pos.id === id)) {
-                    document.body.removeChild(cursors[id]);
-                    delete cursors[id];
-                }
-            });
-        };
+        // remove any extra cursors
+        Object.keys(cursors).forEach((id) => {
+          if (!positions.find((pos) => pos.id === id)) {
+            document.body.removeChild(cursors[id]);
+            delete cursors[id];
+          }
+        });
+      }
     });
-</script>
+  </script>
 </head>
 <body>
-    <h1>Hello Pointers!</h1>
+  <h1>Hello Pointers!</h1>
 </body>
 </html>
